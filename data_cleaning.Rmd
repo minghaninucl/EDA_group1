@@ -1,0 +1,171 @@
+---
+title: "EDA_group1_cleaning"
+output: html_document
+---
+
+```{r}
+library('tidyverse')
+library('lubridate')
+```
+
+read csv
+```{r}
+house2 <- read_csv('data/CLEAN_House2.csv')
+house3 <- read_csv('data/CLEAN_House3.csv')
+house4 <- read_csv('data/CLEAN_House4.csv')
+house5 <- read_csv('data/CLEAN_House5.csv')
+house6 <- read_csv('data/CLEAN_House6.csv')
+house7 <- read_csv('data/CLEAN_House7.csv')
+house8 <- read_csv('data/CLEAN_House8.csv')
+house9 <- read_csv('data/CLEAN_House9.csv')
+house10 <- read_csv('data/CLEAN_House10.csv')
+house11 <- read_csv('data/CLEAN_House11.csv')
+
+dflist <- list(house2,house3,house4,house5,house6,house7,house8,house9,house10,house11)
+```
+
+aggregate daily
+```{r}
+
+house2_agg <- house2 %>% 
+  mutate(day = as.POSIXct(Time, format = "%Y-%m-%d")) %>% 
+  group_by(day) %>%
+  summarise(Aggregate=mean(Aggregate))
+#plot(house2_agg, type = 'line')
+
+house3_agg <- house3 %>% 
+  mutate(day = as.Date(Time, format = "%Y-%m-%d")) %>% 
+  group_by(day) %>%
+  summarise(Aggregate=mean(Aggregate))
+#plot(house3_agg, type = 'line')
+
+house4_agg <- house4 %>% 
+  mutate(day = as.Date(Time, format = "%Y-%m-%d")) %>% 
+  group_by(day) %>%
+  summarise(Aggregate=mean(Aggregate))
+#plot(house4_agg, type = 'line')
+
+house5_agg <- house5 %>% 
+  mutate(day = as.Date(Time, format = "%Y-%m-%d")) %>% 
+  group_by(day) %>%
+  summarise(Aggregate=mean(Aggregate))
+#plot(house5_agg, type = 'line')
+
+house6_agg <- house6 %>% 
+  mutate(day = as.Date(Time, format = "%Y-%m-%d")) %>% 
+  group_by(day) %>%
+  summarise(Aggregate=mean(Aggregate))
+#plot(house6_agg, type = 'line')
+
+house7_agg <- house7 %>% 
+  mutate(day = as.Date(Time, format = "%Y-%m-%d")) %>% 
+  group_by(day) %>%
+  summarise(Aggregate=mean(Aggregate))
+#plot(house7_agg, type = 'line')
+
+house8_agg <- house8 %>% 
+  mutate(day = as.Date(Time, format = "%Y-%m-%d")) %>% 
+  group_by(day) %>%
+  summarise(Aggregate=mean(Aggregate))
+#plot(house8_agg, type = 'line')
+
+house9_agg <- house9 %>% 
+  mutate(day = as.Date(Time, format = "%Y-%m-%d")) %>% 
+  group_by(day) %>%
+  summarise(Aggregate=mean(Aggregate))
+#plot(house9_agg, type = 'line')
+
+house10_agg <- house10 %>% 
+  mutate(day = as.Date(Time, format = "%Y-%m-%d")) %>% 
+  group_by(day) %>%
+  summarise(Aggregate=mean(Aggregate))
+#plot(house10_agg, type = 'line')
+
+house11_agg <- house11 %>% 
+  mutate(day = as.Date(Time, format = "%Y-%m-%d")) %>% 
+  group_by(day) %>%
+  summarise(Aggregate=mean(Aggregate))
+#plot(house11_agg, type = 'line')
+```
+
+aggregate hourly
+```{r}
+house2_agg_h <- house2 %>% 
+  group_by(hour = floor_date(Time, "1 hour")) %>%
+  summarise(Aggregate = mean(Aggregate))
+plot(house2_agg_h, type = 'line')
+
+house3_agg_h <- house3 %>% 
+  group_by(hour = floor_date(Time, "1 hour")) %>%
+  summarise(Aggregate = mean(Aggregate))
+plot(house3_agg_h, type = 'line')
+#there is an outlier data in house3 with avg consumption >30000kW
+
+house4_agg_h <- house4 %>% 
+  group_by(hour = floor_date(Time, "1 hour")) %>%
+  summarise(Aggregate = mean(Aggregate)) 
+plot(house4_agg_h, type = 'line')
+
+house5_agg_h <- house5 %>% 
+  group_by(hour = floor_date(Time, "1 hour")) %>%
+  summarise(Aggregate = mean(Aggregate))
+plot(house5_agg_h, type = 'line')
+
+house6_agg_h <- house6 %>% 
+  group_by(hour = floor_date(Time, "1 hour")) %>%
+  summarise(Aggregate = mean(Aggregate))
+plot(house6_agg_h, type = 'line')
+
+house7_agg_h <- house7 %>% 
+  group_by(hour = floor_date(Time, "1 hour")) %>%
+  summarise(Aggregate = mean(Aggregate))
+plot(house7_agg_h, type = 'line')
+
+house8_agg_h <- house8 %>% 
+  group_by(hour = floor_date(Time, "1 hour")) %>%
+  summarise(Aggregate = mean(Aggregate))
+plot(house8_agg_h, type = 'line')
+
+house9_agg_h <- house9 %>% 
+  group_by(hour = floor_date(Time, "1 hour")) %>%
+  summarise(Aggregate = mean(Aggregate))
+plot(house9_agg_h, type = 'line')
+
+house10_agg_h <- house10 %>% 
+  group_by(hour = floor_date(Time, "1 hour")) %>%
+  summarise(Aggregate = mean(Aggregate))
+plot(house10_agg_h, type = 'line')
+
+house11_agg_h <- house11 %>% 
+  group_by(hour = floor_date(Time, "1 hour")) %>%
+  summarise(Aggregate = mean(Aggregate))
+plot(house11_agg_h, type = 'line')
+```
+
+write csv (daily)
+```{r}
+write_csv(house2_agg, "data/aggregated/House2_aggregated.csv")
+write_csv(house3_agg, "data/aggregated/House3_aggregated.csv")
+write_csv(house4_agg, "data/aggregated/House4_aggregated.csv")
+write_csv(house5_agg, "data/aggregated/House5_aggregated.csv")
+write_csv(house6_agg, "data/aggregated/House6_aggregated.csv")
+write_csv(house7_agg, "data/aggregated/House7_aggregated.csv")
+write_csv(house8_agg, "data/aggregated/House8_aggregated.csv")
+write_csv(house9_agg, "data/aggregated/House9_aggregated.csv")
+write_csv(house10_agg, "data/aggregated/House10_aggregated.csv")
+write_csv(house11_agg, "data/aggregated/House11_aggregated.csv")
+```
+
+write csv (hourly)
+```{r}
+write_csv(house2_agg_h, "data/aggregated_hourly/House2_aggregated_hourly.csv")
+write_csv(house3_agg_h, "data/aggregated_hourly/House3_aggregated_hourly.csv")
+write_csv(house4_agg_h, "data/aggregated_hourly/House4_aggregated_hourly.csv")
+write_csv(house5_agg_h, "data/aggregated_hourly/House5_aggregated_hourly.csv")
+write_csv(house6_agg_h, "data/aggregated_hourly/House6_aggregated_hourly.csv")
+write_csv(house7_agg_h, "data/aggregated_hourly/House7_aggregated_hourly.csv")
+write_csv(house8_agg_h, "data/aggregated_hourly/House8_aggregated_hourly.csv")
+write_csv(house9_agg_h, "data/aggregated_hourly/House9_aggregated_hourly.csv")
+write_csv(house10_agg_h, "data/aggregated_hourly/House10_aggregated_hourly.csv")
+write_csv(house11_agg_h, "data/aggregated_hourly/House11_aggregated_hourly.csv")
+```
