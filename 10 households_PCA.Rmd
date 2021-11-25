@@ -1,0 +1,205 @@
+---
+title: "20 household_Hourly_aggregated"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+### imports
+```{r}
+library(tidyverse)
+library(lubridate)
+library(ggplot2)
+library(broom)
+
+```
+
+### Read files
+```{r}
+f <- "aggregated_daily"
+files <- list.files(f)
+
+
+
+```
+### 
+```{r}
+df_10 <- read_csv(file.path(f, files[1]))
+df_11 <- read_csv(file.path(f, files[2]))
+df_2 <- read_csv(file.path(f, files[3]))
+df_3 <- read_csv(file.path(f, files[4]))
+df_4 <- read_csv(file.path(f, files[5]))
+df_5 <- read_csv(file.path(f, files[6]))
+df_6 <- read_csv(file.path(f, files[7]))
+df_7 <- read_csv(file.path(f, files[8]))
+df_8 <- read_csv(file.path(f, files[9]))
+df_9 <- read_csv(file.path(f, files[10]))
+```
+### join all the files
+```{r}
+df_all <- full_join(df_2,df_3, by = "day") %>% 
+  full_join(df_4, by = "day" ) %>% 
+  full_join(df_5,by = "day") %>% 
+  full_join(df_6,by = "day") %>% 
+  full_join(df_7,by = "day") %>% 
+  full_join(df_8,by = "day") %>% 
+  full_join(df_9,by = "day") %>% 
+  full_join(df_10,by = "day") %>% 
+  full_join(df_11,by = "day") 
+```
+
+
+### renames
+```{r}
+names(df_all)  <- c('Date',"Aggregate_2", "Aggregate_3","Aggregate_4","Aggregate_5","Aggregate_6",
+                      "Aggregate_7", "Aggregate_8","Aggregate_9","Aggregate_10","Aggregate_11")
+```
+
+### prepare data for pca(1)
+```{r}
+df_all <- df_all %>% 
+  drop_na() %>% 
+  mutate(Date = ymd(Date),
+         month  = month(Date),
+         day =  day(Date))
+```
+
+###Transform: row for each household, column for each day
+```{r}
+
+df_longer <- df_all %>% 
+  select(-c(month,day)) %>% 
+  pivot_longer(Aggregate_2:Aggregate_11, names_to = "Households", values_to = "consumption")
+
+df_wider <- df_longer %>% 
+  pivot_wider(names_from = Date, values_from = consumption)
+
+```
+
+###Confirm no columns have 0 variance
+```{r}
+(map_dbl(df_wider, ~sd(.)) == 0) %>% sum()
+```
+
+###Normalise rows
+
+```{r}
+for (i in 1:nrow(df_wider)){
+  max_value <- max(df_wider[i,-1])
+  min_value <- min(df_wider[i,-1])
+  df_wider[i,-1] <- (df_wider[i,-1]-min(df_wider[i,-1]))/(max_value - min_value)
+}
+
+```
+### Calculate the principal components 
+```{r}
+pcs <- df_wider %>% 
+  select(-Households) %>% 
+  scale() %>% # standardise the data
+  prcomp()
+```
+
+# Tidy! 
+```{r}
+tidy_pcs <- tidy(pcs) ### why??
+```
+### Scree plot
+```{r}
+plot(pcs)
+```
+
+### Plot first 2 principal components
+```{r}
+pcs_2 <- tidy_pcs %>%
+  filter(PC <= 2) %>% 
+  pivot_wider(id_cols = row, 
+              names_from = PC)
+
+pcs_2 %>%
+  ggplot(aes(x = `1`, y = `2`)) +
+  geom_point()
+```
+### Clustering 2D
+```{r}
+set.seed(123)
+
+k <- 3
+
+clusters <- tidy_pcs %>%
+  filter(PC <= 2) %>% 
+  pivot_wider(id_cols = row, 
+              names_from = PC) %>%
+  select(-row) %>% 
+  kmeans(k)
+
+pcs_2_clusters <- pcs_2 %>%
+  mutate(cluster = as.factor(clusters$cluster))
+
+pcs_2_clusters %>%
+  ggplot(aes(x = `1`, y = `2`, color = cluster)) +
+  geom_point()
+```
+### Elbow plot
+```{r}
+set.seed(123)
+
+ks <- 2:9
+vs <- numeric()
+for (k in ks){
+  cls <- tidy_pcs %>%
+  filter(PC <= 2) %>% 
+    pivot_wider(id_cols = row, 
+                names_from = PC) %>%
+    select(-row) %>% 
+    kmeans(k)
+    vs <- c(vs, cls$tot.withinss)
+}
+
+plot(ks, vs, type = 'b', xlab = 'k', ylab = 'Total within-cluster sum of squares')
+```
+### Assigning clusters to original customer time series
+```{r}
+# Add clusters to original time series
+df_clusters <- df_wider %>% 
+  mutate(cluster = as.factor(clusters$cluster))
+view(df_clusters)
+rownames(df_clusters) <- as.character(rownames(df_clusters))
+
+# pivot the data
+df_clusters_pivot <- df_clusters %>% 
+  pivot_longer(`2014-06-03`:`2015-05-10`, names_to = "Date", values_to = "value") 
+
+```
+
+Plot the mean consumption profiles for each cluster
+
+```{r}
+mean_power <- df_clusters_pivot %>% 
+  group_by(Households,cluster, Date) %>% 
+  summarise(mean_power = mean(value),
+            upper = quantile(value, 0.75),
+            lower = quantile(value, 0.25))
+## add facet 
+mean_power_1 <- mean_power %>% 
+  mutate(Date= ymd(Date),
+         Day = wday(Date),
+         month = month(Date))
+  
+```
+
+```{r}
+mean_power_1 %>% 
+  ggplot(aes(x = Date, 
+             y = mean_power, 
+             ymin = lower,
+             ymax = upper,
+             fill = cluster,
+             colour = cluster)) + 
+  geom_line() + 
+  geom_ribbon(alpha = 0.2, color = NA)+
+  facet_wrap(~cluster) +
+  labs(subtitle = 'Line shows mean power (kW)\nRibbon shows inter-quartile range')
+```
+
