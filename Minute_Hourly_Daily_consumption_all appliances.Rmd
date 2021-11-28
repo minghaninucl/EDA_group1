@@ -1,0 +1,1293 @@
+---
+title: "appliance data"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+### imports
+```{r}
+library(lubridate)
+library(tidyverse)
+library(ggplot2)
+```
+### house1 daily consumption 
+```{r}
+### minute mean power 
+df1_minute <- read_csv('data/CLEAN_House1.csv') %>% 
+  select(-c(Unix,Issues)) %>% 
+  mutate(Time = ymd_hm(Time)) %>% 
+  group_by(Time) %>% 
+  summarise(Aggregate1 = mean(Aggregate),
+            Fridge1 = mean(Appliance1),
+            Freezer1_1 = mean(Appliance2),
+            Freezer1_2 = mean(Appliance3),
+            Washer_Dryer1 = mean(Appliance4),
+            Washing_Machine1 = mean(Appliance5),
+            Dishwasher1 = mean(Appliance6),
+            PC1 = mean(Appliance7),
+            TV1 = mean(Appliance8),
+            Eheater1 = mean(Appliance9)) 
+
+
+### hourly consumption = sum(60*mean power per minute)/3600000
+df1_hourly <- df1_minute %>% 
+  mutate(date = as.Date(Time),
+         hour = hour(Time),
+         hourly = str_c(date, hour, sep = "-")) %>% 
+group_by(hourly) %>% 
+  summarise(Aggregate1 = sum(Aggregate1)*60/3600000, 
+            Fridge1 = sum(Fridge1)*60/3600000,
+            Freezer1_1 = sum(Freezer1_1)*60/3600000,
+            Freezer1_2 = sum(Freezer1_2)*60/3600000,
+            Washer_Dryer1 = sum(Washer_Dryer1)*60/3600000,
+            Washing_Machine1 = sum(Washing_Machine1)*60/3600000,
+            Dishwasher1 = sum(Dishwasher1)*60/3600000,
+            PC1 = sum(PC1)*60/3600000,
+            TV1 = sum(TV1)*60/3600000,
+            Eheater1 = sum(Eheater1)*60/3600000)
+  
+### daily consumption  = sum(hourly consumption)
+df1_daily <- df1_hourly %>% 
+  mutate(date = as.Date(hourly)) %>% 
+  group_by(date) %>% 
+  summarise(Aggregate1 = sum (Aggregate1),
+            Fridge1 = sum(Fridge1),
+            Freezer1_1 = sum(Freezer1_1),
+            Freezer1_2 = sum(Freezer1_2),
+            Washer_Dryer1 = sum(Washer_Dryer1),
+            Washing_Machine1 = sum(Washing_Machine1),
+            Dishwasher1 = sum(Dishwasher1),
+            PC1 = sum(PC1),
+            TV1 = sum(TV1),
+            Eheater1 = sum(Eheater1))
+
+# write file
+write.csv(df1_minute,"House1_minute_mean_power.csv")
+write.csv(df1_hourly,"House1_hourly_consumption.csv")
+write.csv(df1_daily,"House1_daily_consumption.csv")
+
+```
+### house1 hourly consumption 
+
+```{r}
+
+```
+
+### house2 daily and hourly consumption 
+```{r}
+# minute average
+df2_minute <- read_csv('data/CLEAN_House2.csv') %>% 
+  select(-c(Unix,Issues)) %>% 
+  mutate(Time = ymd_hms(Time),
+         date = as.Date(Time),
+         hour = hour(Time),
+         min = minute(Time),
+         minute = str_c(date, hour, min, sep = "-"))%>% # Y-M-D-H-M to get minute average
+  group_by(minute) %>% 
+  summarise(Aggregate = mean(Aggregate), ### mean power of every mins
+            mean1 = mean(Appliance1),
+            mean2 = mean(Appliance2),
+            mean3 = mean(Appliance3),
+            mean4 = mean(Appliance4),
+            mean5 = mean(Appliance5),
+            mean6 = mean(Appliance6),
+            mean7 = mean(Appliance7),
+            mean8 = mean(Appliance8),
+            mean9 = mean(Appliance9)) 
+
+# hourly consumption =  sum(60*minute average)/3600000
+df2_hourly <- df2_minute%>% 
+  mutate(minute = ymd_hm(minute),
+         hour = hour(minute),
+         date = as.Date(minute),
+         hourly = str_c(date, hour, sep = "-")) %>% ## get Y-M-D-H format for summarizing
+  group_by(hourly) %>% 
+  summarise(Aggregate2 = sum (Aggregate)*60/3600000,## kWh per hour is sum of consumption per min
+            Fridge_Freezer2 = sum(mean1)*60/3600000,## from metadata
+            Washing_Machine2 = sum(mean2)*60/3600000,
+            Dishwasher2 = sum(mean3)*60/3600000,
+            TV2 = sum(mean4)*60/3600000,
+            Microwave2 = sum(mean5)*60/3600000,
+            Toaster2 = sum(mean6)*60/3600000,
+            HIFI2 = sum(mean7)*60/3600000,
+            Kettle2 = sum(mean8)*60/3600000,
+            Fan2 = sum(mean9)*60/3600000)
+
+### Daily consumption = sum(minute consumption)
+df2_daily <-  df2_hourly %>% 
+  mutate(Time = ymd_h(hourly),
+         date = as.Date(Time)) %>% 
+  group_by(date) %>% 
+  summarise(Aggregate2 = sum(Aggregate2),
+            Fridge_Freezer2 = sum(Fridge_Freezer2),
+            Washing_Machine2 = sum(Washing_Machine2),
+            Dishwasher2 = sum(Dishwasher2),
+            TV2 = sum(TV2),
+            Microwave2 = sum(Microwave2),
+            Toaster2 = sum(Toaster2),
+            HIFI2 = sum(HIFI2),
+            Kettle2 = sum(Kettle2),
+            Fan2 = sum(Fan2))
+
+
+
+# write file
+write.csv(df2_minute,"House2_minute_mean_power.csv")
+write.csv(df2_hourly,"House2_hourly_consumption.csv")
+write.csv(df2_daily,"House2_daily_consumption.csv")
+
+```
+
+
+###Household 3 
+```{r}
+# minute average
+df3_minute <- read_csv('data/CLEAN_House3.csv') %>% 
+  select(-c(Unix,Issues)) %>% 
+  mutate(Time = ymd_hms(Time),
+         date = as.Date(Time),
+         hour = hour(Time),
+         min = minute(Time),
+         minute = str_c(date, hour, min, sep = "-"))%>% # Y-M-D-H-M to get minute average
+  group_by(minute) %>% 
+  summarise(Aggregate3 = mean(Aggregate), ### mean power of every mins
+            Toaster3 = mean(Appliance1),
+            Fridge_Freezer3 = mean(Appliance2),
+            Freezer3 = mean(Appliance3),
+            Tumble_Dryer3 = mean(Appliance4),
+            Dishwasher3 = mean(Appliance5),
+            Washing_Machine3 = mean(Appliance6),
+            TV3 = mean(Appliance7),
+            Microwave3 = mean(Appliance8),
+            Kettle = mean(Appliance9)) 
+
+# hourly consumption =  sum(60*minute average)/3600000
+df3_hourly <- df3_minute%>% 
+  mutate(minute = ymd_hm(minute),
+         hour = hour(minute),
+         date = as.Date(minute),
+         hourly = str_c(date, hour, sep = "-")) %>% ## get Y-M-D-H format for summarizing
+  group_by(hourly) %>% 
+  summarise(Aggregate3 = sum (Aggregate3)*60/3600000,## kWh per hour is sum of consumption per min
+            Toaster3 = sum(Toaster3)*60/3600000,
+            Fridge_Freezer3 = sum(Fridge_Freezer3)*60/3600000,
+            Freezer3 = sum(Freezer3)*60/3600000,
+            Tumble_Dryer3 = sum(Tumble_Dryer3)*60/3600000,
+            Dishwasher3 = sum(Dishwasher3)*60/3600000,
+            Washing_Machine3 = sum(Washing_Machine3)*60/3600000,
+            TV3 = sum(TV3)*60/3600000,
+            Microwave3 = sum(Microwave3)*60/3600000,
+            Kettle3 = sum(Kettle)*60/3600000)
+
+### Daily consumption = sum(minute consumption)
+df3_daily <-  df3_hourly %>% 
+  mutate(Time = ymd_h(hourly),
+         date = as.Date(Time)) %>% 
+  group_by(date) %>% 
+  summarise(Aggregate3 = sum (Aggregate3),
+            Toaster3 = sum(Toaster3),
+            Fridge_Freezer3 = sum(Fridge_Freezer3),
+            Freezer3 = sum(Freezer3),
+            Tumble_Dryer3 = sum(Tumble_Dryer3),
+            Dishwasher3 = sum(Dishwasher3),
+            Washing_Machine3 = sum(Washing_Machine3),
+            TV3 = sum(TV3),
+            Microwave3 = sum(Microwave3),
+            Kettle3 = sum(Kettle3))
+
+
+
+# write file
+write.csv(df3_minute,"House3_minute_mean_power.csv")
+write.csv(df3_hourly,"House3_hourly_consumption.csv")
+write.csv(df3_daily,"House3_daily_consumption.csv")
+```
+
+###Household 4 
+```{r}
+# minute average
+df4_minute <- read_csv('data/CLEAN_House4.csv') %>% 
+  select(-c(Unix,Issues)) %>% 
+  mutate(Time = ymd_hms(Time),
+         date = as.Date(Time),
+         hour = hour(Time),
+         min = minute(Time),
+         minute = str_c(date, hour, min, sep = "-"))%>% # Y-M-D-H-M to get minute average
+  group_by(minute) %>% 
+  summarise(Aggregate4 = mean(Aggregate), ### mean power of every mins
+            Fridge4 = mean(Appliance1),
+            Freezer4 = mean(Appliance2),
+            Fridge_Freezer4 = mean(Appliance3),
+            Washing_Machine4_1 = mean(Appliance4),
+            Washing_Machine4_2 = mean(Appliance5),
+            PC4 = mean(Appliance6),
+            TV4 = mean(Appliance7),
+            Microwave4 = mean(Appliance8),
+            Kettle4 = mean(Appliance9)) 
+
+# hourly consumption =  sum(60*minute average)/3600000
+df4_hourly <- df4_minute%>% 
+  mutate(minute = ymd_hm(minute),
+         hour = hour(minute),
+         date = as.Date(minute),
+         hourly = str_c(date, hour, sep = "-")) %>% ## get Y-M-D-H format for summarizing
+  group_by(hourly) %>% 
+  summarise(Aggregate4 = sum (Aggregate4)*60/3600000,## kWh per hour is sum of consumption per min
+            Fridge4 = sum(Fridge4)*60/3600000,
+            Freezer4 = sum(Freezer4)*60/3600000,
+            Fridge_Freezer4 = sum(Fridge_Freezer4)*60/3600000,
+            Washing_Machine4_1 = sum(Washing_Machine4_1)*60/3600000,
+            Washing_Machine4_2 = sum(Washing_Machine4_2)*60/3600000,
+            PC4 = sum(PC4)*60/3600000,
+            TV4 = sum(TV4)*60/3600000,
+            Microwave4 = sum(Microwave4)*60/3600000,
+            Kettle4 = sum(Kettle4)*60/3600000)
+
+
+
+### Daily consumption = sum(minute consumption)
+df4_daily <-  df4_hourly %>% 
+  mutate(Time = ymd_h(hourly),
+         date = as.Date(Time)) %>% 
+  group_by(date) %>% 
+  summarise(Aggregate4 = sum (Aggregate4),## kWh per hour is sum of consumption per min
+            Fridge4 = sum(Fridge4),
+            Freezer4 = sum(Freezer4),
+            Fridge_Freezer4 = sum(Fridge_Freezer4),
+            Washing_Machine4_1 = sum(Washing_Machine4_1),
+            Washing_Machine4_2 = sum(Washing_Machine4_2),
+            PC4 = sum(PC4),
+            TV4 = sum(TV4),
+            Microwave4 = sum(Microwave4),
+            Kettle4 = sum(Kettle4))
+
+
+
+# write file
+write.csv(df4_minute,"House4_minute_mean_power.csv")
+write.csv(df4_hourly,"House4_hourly_consumption.csv")
+write.csv(df4_daily,"House4_daily_consumption.csv")
+```
+
+### Household 5
+```{r}
+# minute average
+df5_minute <- read_csv('data/CLEAN_House5.csv') %>% 
+  select(-c(Unix,Issues)) %>% 
+  mutate(Time = ymd_hms(Time),
+         date = as.Date(Time),
+         hour = hour(Time),
+         min = minute(Time),
+         minute = str_c(date, hour, min, sep = "-"))%>% # Y-M-D-H-M to get minute average
+  group_by(minute) %>% 
+  summarise(Aggregate5 = mean(Aggregate), ### mean power of every mins
+            Fridge_Freezer5 = mean(Appliance1),
+            Tumble_Dryer5 = mean(Appliance2),
+            Washing_Machine5 = mean(Appliance3),
+            Dishwasher5 = mean(Appliance4),
+            PC5 = mean(Appliance5),
+            TV5 = mean(Appliance6),
+            Microwave5 = mean(Appliance7),
+            Kettle5 = mean(Appliance8),
+            Toaster5 = mean(Appliance9)) 
+
+# hourly consumption =  sum(60*minute average)/3600000
+df5_hourly <- df5_minute%>% 
+  mutate(minute = ymd_hm(minute),
+         hour = hour(minute),
+         date = as.Date(minute),
+         hourly = str_c(date, hour, sep = "-")) %>% ## get Y-M-D-H format for summarizing
+  group_by(hourly) %>% 
+  summarise(Aggregate5 = sum (Aggregate5)*60/3600000,## kWh per hour is sum of consumption per min
+            Fridge_Freezer5 = sum(Fridge_Freezer5)*60/3600000,
+            Tumble_Dryer5 = sum(Tumble_Dryer5)*60/3600000,
+            Washing_Machine5 = sum(Washing_Machine5)*60/3600000,
+            Dishwasher5 = sum(Dishwasher5)*60/3600000,
+            PC5 = sum(PC5)*60/3600000,
+            TV5 = sum(TV5)*60/3600000,
+            Microwave5 = sum(Microwave5)*60/3600000,
+            Kettle5 = sum(Kettle5)*60/3600000,
+            Toaster5 = sum(Toaster5)*60/3600000)
+
+
+
+### Daily consumption = sum(minute consumption)
+df5_daily <-  df5_hourly %>% 
+  mutate(Time = ymd_h(hourly),
+         date = as.Date(Time)) %>% 
+  group_by(date) %>% 
+  summarise(Aggregate5 = sum (Aggregate5),## 
+            Fridge_Freezer5 = sum(Fridge_Freezer5),
+            Tumble_Dryer5 = sum(Tumble_Dryer5),
+            Washing_Machine5 = sum(Washing_Machine5),
+            Dishwasher5 = sum(Dishwasher5),
+            PC5 = sum(PC5),
+            TV5 = sum(TV5),
+            Microwave5 = sum(Microwave5),
+            Kettle5 = sum(Kettle5),
+            Toaster5 = sum(Toaster5))
+
+
+
+# write file
+write.csv(df5_minute,"House5_minute_mean_power.csv")
+write.csv(df5_hourly,"House5_hourly_consumption.csv")
+write.csv(df5_daily,"House5_daily_consumption.csv")
+```
+### house6
+```{r}
+# minute average
+df6_minute <- read_csv('data/CLEAN_House6.csv') %>% 
+  select(-c(Unix,Issues)) %>% 
+  mutate(Time = ymd_hms(Time),
+         date = as.Date(Time),
+         hour = hour(Time),
+         min = minute(Time),
+         minute = str_c(date, hour, min, sep = "-"))%>% # Y-M-D-H-M to get minute average
+  group_by(minute) %>% 
+  summarise(Aggregate6 = mean(Aggregate), ### mean power of every mins
+            Freezer6 = mean(Appliance1),
+            Washing_Machine6 = mean(Appliance2),
+            Dishwasher6 = mean(Appliance3),
+            PC6 = mean(Appliance4),
+            TV6 = mean(Appliance5),
+            Microwave6 = mean(Appliance6),
+            Kettle6 = mean(Appliance7),
+            Toaster6 = mean(Appliance8),
+            PC6_2 = mean(Appliance9)) 
+
+# hourly consumption =  sum(60*minute average)/3600000
+df6_hourly <- df6_minute%>% 
+  mutate(minute = ymd_hm(minute),
+         hour = hour(minute),
+         date = as.Date(minute),
+         hourly = str_c(date, hour, sep = "-")) %>% ## get Y-M-D-H format for summarizing
+  group_by(hourly) %>% 
+  summarise(Aggregate6 = sum (Aggregate6)*60/3600000,
+            Freezer6  = sum(Freezer6)*60/3600000,
+            Washing_Machine6 = sum(Washing_Machine6)*60/3600000,
+            Dishwasher6 = sum(Dishwasher6)*60/3600000,
+            PC6 = sum(PC6)*60/3600000,
+            TV6 = sum(TV6)*60/3600000,
+            Microwave6 = sum(Microwave6)*60/3600000,
+            Kettle6 = sum(Kettle6)*60/3600000,
+            Toaster6 = sum(Toaster6)*60/3600000,
+            PC6_2 = sum(PC6_2)*60/3600000)
+
+### Daily consumption = sum(minute consumption)
+df6_daily <-  df6_hourly %>% 
+  mutate(Time = ymd_h(hourly),
+         date = as.Date(Time)) %>% 
+  group_by(date) %>% 
+  summarise(Aggregate6 = sum (Aggregate6),
+            Freezer6  = sum(Freezer6),
+            Washing_Machine6 = sum(Washing_Machine6),
+            Dishwasher6 = sum(Dishwasher6),
+            PC6 = sum(PC6),
+            TV6 = sum(TV6),
+            Microwave6 = sum(Microwave6),
+            Kettle6 = sum(Kettle6),
+            Toaster6 = sum(Toaster6),
+            PC6_2 = sum(PC6_2))
+
+# write file
+write.csv(df6_minute,"House6_minute_mean_power.csv")
+write.csv(df6_hourly,"House6_hourly_consumption.csv")
+write.csv(df6_daily,"House6_daily_consumption.csv")
+```
+
+### house 7
+```{r}
+# minute average
+df7_minute <- read_csv('data/CLEAN_House7.csv') %>% 
+  select(-c(Unix,Issues)) %>% 
+  mutate(Time = ymd_hms(Time),
+         date = as.Date(Time),
+         hour = hour(Time),
+         min = minute(Time),
+         minute = str_c(date, hour, min, sep = "-"))%>% # Y-M-D-H-M to get minute average
+  group_by(minute) %>% 
+  summarise(Aggregate7 = mean(Aggregate), ### mean power of every mins
+            Fridge7 = mean(Appliance1),
+            Freezer7_1 = mean(Appliance2),
+            Freezer7_2 = mean(Appliance3),
+            Tumble_Dryer7 = mean(Appliance4),
+            Washing_Machine7 = mean(Appliance5),
+            Dishwasher7 = mean(Appliance6),
+            Kettle7 = mean(Appliance7),
+            Toaster7 = mean(Appliance8),
+            Kettle7 = mean(Appliance9)) 
+
+# hourly consumption =  sum(60*minute average)/3600000
+df7_hourly <- df7_minute%>% 
+  mutate(minute = ymd_hm(minute),
+         hour = hour(minute),
+         date = as.Date(minute),
+         hourly = str_c(date, hour, sep = "-")) %>% ## get Y-M-D-H format for summarizing
+  group_by(hourly) %>% 
+  summarise(Aggregate7 = sum (Aggregate7)*60/3600000,
+            Fridge7  = sum(Freezer7)*60/3600000,
+            Freezer7_1 = sum(Freezer7_1)*60/3600000,
+            Freezer7_2 = sum(Freezer7_2)*60/3600000,
+            Tumble_Dryer7 = sum(Tumble_Dryer7)*60/3600000,
+            Washing_Machine7 = sum(Washing_Machine7)*60/3600000,
+            Dishwasher7 = sum(Dishwasher7)*60/3600000,
+            TV7 = sum(TV7)*60/3600000,
+            Toaster7 = sum(Toaster7)*60/3600000,
+            Kettle7 = sum(Kettle7)*60/3600000)
+
+### Daily consumption = sum(minute consumption)
+df7_daily <-  df7_hourly %>% 
+  mutate(Time = ymd_h(hourly),
+         date = as.Date(Time)) %>% 
+  group_by(date) %>% 
+  summarise(Aggregate7 = sum (Aggregate7),
+            Fridge7  = sum(Fridge7),
+            Freezer7_1 = sum(Freezer7_1),
+            Freezer7_2 = sum(Freezer7_2),
+            Tumble_Dryer7 = sum(Tumble_Dryer7),
+            Washing_Machine7 = sum(Washing_Machine7),
+            Dishwasher7 = sum(Dishwasher7),
+            TV7 = sum(TV7),
+            Toaster7 = sum(Toaster7),
+            Kettle7 = sum(Kettle7))
+
+# write file
+write.csv(df7_minute,"House7_minute_mean_power.csv")
+write.csv(df7_hourly,"House7_hourly_consumption.csv")
+write.csv(df7_daily,"House7_daily_consumption.csv")
+```
+
+
+### House 8
+```{r}
+# minute average
+df8_minute <- read_csv('data/CLEAN_House8.csv') %>% 
+  select(-c(Unix,Issues)) %>% 
+  mutate(Time = ymd_hms(Time),
+         date = as.Date(Time),
+         hour = hour(Time),
+         min = minute(Time),
+         minute = str_c(date, hour, min, sep = "-"))%>% # Y-M-D-H-M to get minute average
+  group_by(minute) %>% 
+  summarise(Aggregate8 = mean(Aggregate), ### mean power of every mins
+            Fridge8 = mean(Appliance1),
+            Freezer8 = mean(Appliance2),
+            Washer_Dryer8 = mean(Appliance3),
+            Washing_Machine8 = mean(Appliance4),
+            Toaster8 = mean(Appliance5),
+            PC8 = mean(Appliance6),
+            TV8 = mean(Appliance7),
+            Microwave8 = mean(Appliance8),
+            Kettle8 = mean(Appliance9)) 
+
+# hourly consumption =  sum(60*minute average)/3600000
+df8_hourly <- df8_minute%>% 
+  mutate(minute = ymd_hm(minute),
+         hour = hour(minute),
+         date = as.Date(minute),
+         hourly = str_c(date, hour, sep = "-")) %>% ## get Y-M-D-H format for summarizing
+  group_by(hourly) %>% 
+  summarise(Aggregate8 = sum (Aggregate8)*60/3600000,
+            Fridge8  = sum(Freezer8)*60/3600000,
+            Freezer8 = sum(Freezer8)*60/3600000,
+            Washer_Dryer8 = sum(Washer_Dryer8)*60/3600000,
+            Washing_Machine8 = sum(Washing_Machine8)*60/3600000,
+            Toaster8 = sum(Toaster8)*60/3600000,
+            PC8  =  sum(PC8)*60/3600000,
+            TV8 = sum(TV8)*60/3600000,
+            Microwave8 = sum(Microwave8)*60/3600000,
+            Kettle8 = sum(Kettle8)*60/3600000)
+
+### Daily consumption = sum(minute consumption)
+df8_daily <-  df8_hourly %>% 
+  mutate(Time = ymd_h(hourly),
+         date = as.Date(Time)) %>% 
+  group_by(date) %>% 
+  summarise(Aggregate8 = sum (Aggregate8),
+            Fridge8  = sum(Freezer8),
+            Freezer8 = sum(Freezer8),
+            Washer_Dryer8 = sum(Washer_Dryer8),
+            Washing_Machine8 = sum(Washing_Machine8),
+            Toaster8 = sum(Toaster8),
+            PC8  =  sum(PC8),
+            TV8 = sum(TV8),
+            Microwave8 = sum(Microwave8),
+            Kettle8 = sum(Kettle8))
+
+# write file
+write.csv(df8_minute,"House8_minute_mean_power.csv")
+write.csv(df8_hourly,"House8_hourly_consumption.csv")
+write.csv(df8_daily,"House8_daily_consumption.csv")
+```
+
+### House9
+```{r}
+# minute average
+df9_minute <- read_csv('data/CLEAN_House9.csv') %>% 
+  select(-c(Unix,Issues)) %>% 
+  mutate(Time = ymd_hms(Time),
+         date = as.Date(Time),
+         hour = hour(Time),
+         min = minute(Time),
+         minute = str_c(date, hour, min, sep = "-"))%>% # Y-M-D-H-M to get minute average
+  group_by(minute) %>% 
+  summarise(Aggregate9 = mean(Aggregate), ### mean power of every mins
+            Fridge_Freezer9 = mean(Appliance1),
+            Washer_Dryer9 = mean(Appliance2),
+            Washing_Machine9 = mean(Appliance3),
+            Dishwasher9 = mean(Appliance4),
+            TV9 = mean(Appliance5),
+            Microwave9 = mean(Appliance6),
+            Kettle9 = mean(Appliance7),
+            HIHI9 = mean(Appliance8),
+            Eheater9 = mean(Appliance9)) 
+
+# hourly consumption =  sum(60*minute average)/3600000
+df9_hourly <- df9_minute%>% 
+  mutate(minute = ymd_hm(minute),
+         hour = hour(minute),
+         date = as.Date(minute),
+         hourly = str_c(date, hour, sep = "-")) %>% ## get Y-M-D-H format for summarizing
+  group_by(hourly) %>% 
+  summarise(Aggregate9 = sum (Aggregate9)*60/3600000,
+            Fridge_Freezer9  = sum(Fridge_Freezer9)*60/3600000,
+            Washer_Dryer9 = sum(Washer_Dryer9)*60/3600000,
+            Washing_Machine9 = sum(Washing_Machine9)*60/3600000,
+            Dishwasher9 = sum(Dishwasher9)*60/3600000,
+            TV9 = sum(TV9)*60/3600000,
+            Microwave9  =  sum(Microwave9)*60/3600000,
+            Kettle9 = sum(Kettle9)*60/3600000,
+            HIHI9 = sum(HIHI9)*60/3600000,
+            Eheater9 = sum(Eheater9)*60/3600000)
+
+
+### Daily consumption = sum(minute consumption)
+df9_daily <-  df9_hourly %>% 
+  mutate(Time = ymd_h(hourly),
+         date = as.Date(Time)) %>% 
+  group_by(date) %>% 
+  summarise(Aggregate9 = sum (Aggregate9),
+            Fridge_Freezer9  = sum(Fridge_Freezer9),
+            Washer_Dryer9 = sum(Washer_Dryer9),
+            Washing_Machine9 = sum(Washing_Machine9),
+            Dishwasher9 = sum(Dishwasher9),
+            TV9 = sum(TV9),
+            Microwave9  =  sum(Microwave9),
+            Kettle9 = sum(Kettle9),
+            HIHI9 = sum(HIHI9),
+            Eheater9 = sum(Eheater9))
+
+# write file
+write.csv(df9_minute,"House9_minute_mean_power.csv")
+write.csv(df9_hourly,"House9_hourly_consumption.csv")
+write.csv(df9_daily,"House9_daily_consumption.csv")
+```
+
+### House10
+```{r}
+# minute average
+df10_minute <- read_csv('data/CLEAN_House10.csv') %>% 
+  select(-c(Unix,Issues)) %>% 
+  mutate(Time = ymd_hms(Time),
+         date = as.Date(Time),
+         hour = hour(Time),
+         min = minute(Time),
+         minute = str_c(date, hour, min, sep = "-"))%>% # Y-M-D-H-M to get minute average
+  group_by(minute) %>% 
+  summarise(Aggregate10 = mean(Aggregate), ### mean power of every mins
+            Blender10 = mean(Appliance1),
+            Toaster10 = mean(Appliance2),
+            Chest_Freezer10 = mean(Appliance3),
+            Fridge_Freezer10 = mean(Appliance4),
+            Washing_Machine10 = mean(Appliance5),
+            Dishwasher10 = mean(Appliance6),
+            TV10 = mean(Appliance7),
+            Microwave10= mean(Appliance8),
+            K_Mix10 = mean(Appliance9)) 
+
+# hourly consumption =  sum(60*minute average)/3600000
+df10_hourly <- df10_minute%>% 
+  mutate(minute = ymd_hm(minute),
+         hour = hour(minute),
+         date = as.Date(minute),
+         hourly = str_c(date, hour, sep = "-")) %>% ## get Y-M-D-H format for summarizing
+  group_by(hourly) %>% 
+  summarise(Aggregate10 = sum (Aggregate10)*60/3600000,
+            Blender10  = sum(Blender10)*60/3600000,
+            Toaster10 = sum(Toaster10)*60/3600000,
+            Chest_Freezer10 = sum(Chest_Freezer10)*60/3600000,
+            Fridge_Freezer10 = sum(Fridge_Freezer10)*60/3600000,
+            Washing_Machine10 = sum(Washing_Machine10)*60/3600000,
+            Dishwasher10  =  sum(Dishwasher10)*60/3600000,
+            TV10 = sum(TV10)*60/3600000,
+            Microwave10 = sum(Microwave10)*60/3600000,
+            K_Mix10 = sum(K_Mix10)*60/3600000)
+
+
+
+### Daily consumption = sum(minute consumption)
+df10_daily <-  df10_hourly %>% 
+  mutate(Time = ymd_h(hourly),
+         date = as.Date(Time)) %>% 
+  group_by(date) %>% 
+  summarise(Aggregate10 = sum (Aggregate10),
+            Blender10  = sum(Blender10),
+            Toaster10 = sum(Toaster10),
+            Chest_Freezer10 = sum(Chest_Freezer10),
+            Fridge_Freezer10 = sum(Fridge_Freezer10),
+            Washing_Machine10 = sum(Washing_Machine10),
+            Dishwasher10  =  sum(Dishwasher10),
+            TV10 = sum(TV10),
+            Microwave10 = sum(Microwave10),
+            K_Mix10 = sum(K_Mix10))
+
+# write file
+write.csv(df10_minute,"House10_minute_mean_power.csv")
+write.csv(df10_hourly,"House10_hourly_consumption.csv")
+write.csv(df10_daily,"House10_daily_consumption.csv")
+```
+
+# House 11
+```{r}
+# minute average
+df11_minute <- read_csv('data/CLEAN_House11.csv') %>% 
+  select(-c(Unix,Issues)) %>% 
+  mutate(Time = ymd_hms(Time),
+         date = as.Date(Time),
+         hour = hour(Time),
+         min = minute(Time),
+         minute = str_c(date, hour, min, sep = "-"))%>% # Y-M-D-H-M to get minute average
+  group_by(minute) %>% 
+  summarise(Aggregate11 = mean(Aggregate), ### mean power of every mins
+            Fridge11 = mean(Appliance1),
+            Fridge_Freezer11 = mean(Appliance2),
+            Washing_Machine11 = mean(Appliance3),
+            Dishwasher11 = mean(Appliance4),
+            PC11 = mean(Appliance5),
+            Microwave11 = mean(Appliance6),
+            Kettle11 = mean(Appliance7),
+            Router11= mean(Appliance8),
+            HIFI11 = mean(Appliance9)) 
+
+# hourly consumption =  sum(60*minute average)/3600000
+df11_hourly <- df11_minute%>% 
+  mutate(minute = ymd_hm(minute),
+         hour = hour(minute),
+         date = as.Date(minute),
+         hourly = str_c(date, hour, sep = "-")) %>% ## get Y-M-D-H format for summarizing
+  group_by(hourly) %>% 
+  summarise(Aggregate11 = sum (Aggregate11)*60/3600000,
+            Fridge11  = sum(Fridge11)*60/3600000,
+            Fridge_Freezer11 = sum(Fridge_Freezer11)*60/3600000,
+            Washing_Machine11 = sum(Washing_Machine11)*60/3600000,
+            Dishwasher11 = sum(Dishwasher11)*60/3600000,
+            PC11 = sum(PC11)*60/3600000,
+            Microwave11  =  sum(Microwave11)*60/3600000,
+            Kettle11 = sum(Kettle11)*60/3600000,
+            Router11 = sum(Router11)*60/3600000,
+            HIFI11 = sum(HIFI11)*60/3600000)
+
+
+
+### Daily consumption = sum(minute consumption)
+df11_daily <-  df11_hourly %>% 
+  mutate(Time = ymd_h(hourly),
+         date = as.Date(Time)) %>% 
+  group_by(date) %>% 
+  summarise(Aggregate11 = sum (Aggregate11),
+            Fridge11  = sum(Fridge11),
+            Fridge_Freezer11 = sum(Fridge_Freezer11),
+            Washing_Machine11 = sum(Washing_Machine11),
+            Dishwasher11 = sum(Dishwasher11),
+            PC11 = sum(PC11),
+            Microwave11  =  sum(Microwave11),
+            Kettle11 = sum(Kettle11),
+            Router11 = sum(Router11),
+            HIFI11 = sum(HIFI11))
+
+# write file
+write.csv(df11_minute,"House11_minute_mean_power.csv")
+write.csv(df11_hourly,"House11_hourly_consumption.csv")
+write.csv(df11_daily,"House11_daily_consumption.csv")
+```
+
+### House 12
+```{r}
+# minute average
+df12_minute <- read_csv('data/CLEAN_House12.csv') %>% 
+  select(-c(Unix,Issues)) %>% 
+  mutate(Time = ymd_hms(Time),
+         date = as.Date(Time),
+         hour = hour(Time),
+         min = minute(Time),
+         minute = str_c(date, hour, min, sep = "-"))%>% # Y-M-D-H-M to get minute average
+  group_by(minute) %>% 
+  summarise(Aggregate12 = mean(Aggregate), ### mean power of every mins
+            Fridge_Freezer12 = mean(Appliance1),
+            Unkown12 = mean(Appliance2),
+            Unkown12_2 = mean(Appliance3),
+            PC12 = mean(Appliance4),
+            Microwave12 = mean(Appliance5),
+            Kettle12 = mean(Appliance6),
+            Toaster12 = mean(Appliance7),
+            TV12= mean(Appliance8),
+            Unkown12_3 = mean(Appliance9)) 
+
+# hourly consumption =  sum(60*minute average)/3600000
+df12_hourly <- df12_minute%>% 
+  mutate(minute = ymd_hm(minute),
+         hour = hour(minute),
+         date = as.Date(minute),
+         hourly = str_c(date, hour, sep = "-")) %>% ## get Y-M-D-H format for summarizing
+  group_by(hourly) %>% 
+  summarise(Aggregate12 = sum (Aggregate12)*60/3600000,
+            Fridge_Freezer12  = sum(Fridge_Freezer12)*60/3600000,
+            Unkown12 = sum(Unkown12)*60/3600000,
+            Unkown12_2 = sum(Unkown12_2)*60/3600000,
+            PC12 = sum(PC12)*60/3600000,
+            Microwave12 = sum(Microwave12)*60/3600000,
+            Kettle12  =  sum(Kettle12)*60/3600000,
+            Toaster12 = sum(Toaster12)*60/3600000,
+            TV12 = sum(TV12)*60/3600000,
+            Unkown12_3 = sum(Unkown12_3)*60/3600000)
+
+
+
+### Daily consumption = sum(minute consumption)
+df12_daily <-  df12_hourly %>% 
+  mutate(Time = ymd_h(hourly),
+         date = as.Date(Time)) %>% 
+  group_by(date) %>% 
+  summarise(Aggregate12 = sum (Aggregate12),
+            Fridge_Freezer12  = sum(Fridge_Freezer12),
+            Unkown12 = sum(Unkown12),
+            Unkown12_2 = sum(Unkown12_2),
+            PC12 = sum(PC12),
+            Microwave12 = sum(Microwave12),
+            Kettle12  =  sum(Kettle12),
+            Toaster12 = sum(Toaster12),
+            TV12 = sum(TV12),
+            Unkown12_3 = sum(Unkown12_3))
+
+
+# write file
+write.csv(df12_minute,"House12_minute_mean_power.csv")
+write.csv(df12_hourly,"House12_hourly_consumption.csv")
+write.csv(df12_daily,"House12_daily_consumption.csv")
+```
+
+### House 13
+```{r}
+# minute average
+df13_minute <- read_csv('data/CLEAN_House13.csv') %>% 
+  select(-c(Unix,Issues)) %>% 
+  mutate(Time = ymd_hms(Time),
+         date = as.Date(Time),
+         hour = hour(Time),
+         min = minute(Time),
+         minute = str_c(date, hour, min, sep = "-"))%>% # Y-M-D-H-M to get minute average
+  group_by(minute) %>% 
+  summarise(Aggregate13 = mean(Aggregate), ### mean power of every mins
+            TV13 = mean(Appliance1),
+            Freezer13 = mean(Appliance2),
+            Washing_Machine13 = mean(Appliance3),
+            Dishwasher13 = mean(Appliance4),
+            Unknown13 = mean(Appliance5),
+            Network_Site13 = mean(Appliance6),
+            Microwave13 = mean(Appliance7),
+            Microwave13_1= mean(Appliance8),
+            Kettle13 = mean(Appliance9)) 
+
+# hourly consumption =  sum(60*minute average)/3600000
+df13_hourly <- df13_minute%>% 
+  mutate(minute = ymd_hm(minute),
+         hour = hour(minute),
+         date = as.Date(minute),
+         hourly = str_c(date, hour, sep = "-")) %>% ## get Y-M-D-H format for summarizing
+  group_by(hourly) %>% 
+  summarise(Aggregate13 = sum (Aggregate13)*60/3600000,
+            TV13  = sum(TV13)*60/3600000,
+            Freezer13 = sum(Freezer13)*60/3600000,
+            Washing_Machine13 = sum(Washing_Machine13)*60/3600000,
+            Dishwasher13 = sum(Dishwasher13)*60/3600000,
+            Unknown13 = sum(Unknown13)*60/3600000,
+            Network_Site13  =  sum(Network_Site13)*60/3600000,
+            Microwave13 = sum(Microwave13)*60/3600000,
+            Microwave13_1 = sum(Microwave13_1)*60/3600000,
+            Kettle13 = sum(Kettle13)*60/3600000)
+
+### Daily consumption = sum(minute consumption)
+df13_daily <-  df13_hourly %>% 
+  mutate(Time = ymd_h(hourly),
+         date = as.Date(Time)) %>% 
+  group_by(date) %>% 
+  summarise(Aggregate13 = sum (Aggregate13),
+            TV13  = sum(TV13),
+            Freezer13 = sum(Freezer13),
+            Washing_Machine13 = sum(Washing_Machine13),
+            Dishwasher13 = sum(Dishwasher13),
+            Unknown13 = sum(Unknown13),
+            Network_Site13  =  sum(Network_Site13),
+            Microwave13 = sum(Microwave13),
+            Microwave13_1 = sum(Microwave13_1),
+            Kettle13 = sum(Kettle13))
+
+
+# write file
+write.csv(df13_minute,"House13_minute_mean_power.csv")
+write.csv(df13_hourly,"House13_hourly_consumption.csv")
+write.csv(df13_daily,"House13_daily_consumption.csv")
+```
+
+# House 15
+```{r}
+# minute average
+df15_minute <- read_csv('data/CLEAN_House15.csv') %>% 
+  select(-c(Unix,Issues)) %>% 
+  mutate(Time = ymd_hms(Time),
+         date = as.Date(Time),
+         hour = hour(Time),
+         min = minute(Time),
+         minute = str_c(date, hour, min, sep = "-"))%>% # Y-M-D-H-M to get minute average
+  group_by(minute) %>% 
+  summarise(Aggregate15 = mean(Aggregate), ### mean power of every mins
+            Fridge_Freezer15 = mean(Appliance1),
+            Tumble_Dryer15 = mean(Appliance2),
+            Washing_Machine15 = mean(Appliance3),
+            Dishwasher15 = mean(Appliance4),
+            PC15 = mean(Appliance5),
+            TV15 = mean(Appliance6),
+            Microwave15 = mean(Appliance7),
+            HIFI15= mean(Appliance8),
+            Toaster15 = mean(Appliance9)) 
+
+# hourly consumption =  sum(60*minute average)/3600000
+df15_hourly <- df15_minute%>% 
+  mutate(minute = ymd_hm(minute),
+         hour = hour(minute),
+         date = as.Date(minute),
+         hourly = str_c(date, hour, sep = "-")) %>% ## get Y-M-D-H format for summarizing
+  group_by(hourly) %>% 
+  summarise(Aggregate15 = sum (Aggregate15)*60/3600000,
+            Fridge_Freezer15  = sum(Fridge_Freezer15)*60/3600000,
+            Tumble_Dryer15 = sum(Tumble_Dryer15)*60/3600000,
+            Washing_Machine15 = sum(Washing_Machine15)*60/3600000,
+            Dishwasher15 = sum(Dishwasher15)*60/3600000,
+            PC15 = sum( PC15)*60/3600000,
+            TV15  =  sum(TV15)*60/3600000,
+            Microwave15 = sum(Microwave15)*60/3600000,
+            HIFI15 = sum(HIFI15)*60/3600000,
+            Toaster15  = sum(Toaster15 )*60/3600000)
+
+
+
+### Daily consumption = sum(minute consumption)
+df15_daily <-  df15_hourly %>% 
+  mutate(Time = ymd_h(hourly),
+         date = as.Date(Time)) %>% 
+  group_by(date) %>% 
+ summarise(Aggregate15 = sum (Aggregate15),
+            Fridge_Freezer15  = sum(Fridge_Freezer15),
+            Tumble_Dryer15 = sum(Tumble_Dryer15),
+            Washing_Machine15 = sum(Washing_Machine15),
+            Dishwasher15 = sum(Dishwasher15),
+            PC15 = sum(PC15),
+            TV15  =  sum(TV15),
+            Microwave15 = sum(Microwave15),
+            HIFI15 = sum(HIFI15),
+            Toaster15  = sum(Toaster15))
+
+
+# write file
+write.csv(df15_minute,"House15_minute_mean_power.csv")
+write.csv(df15_hourly,"House15_hourly_consumption.csv")
+write.csv(df15_daily,"House15_daily_consumption.csv")
+```
+
+### House 16
+```{r}
+# minute average
+df16_minute <- read_csv('data/CLEAN_House16.csv') %>% 
+  select(-c(Unix,Issues)) %>% 
+  mutate(Time = ymd_hms(Time),
+         date = as.Date(Time),
+         hour = hour(Time),
+         min = minute(Time),
+         minute = str_c(date, hour, min, sep = "-"))%>% # Y-M-D-H-M to get minute average
+  group_by(minute) %>% 
+  summarise(Aggregate16 = mean(Aggregate), ### mean power of every mins
+            Fridge_Freezer16_1 = mean(Appliance1),
+            Fridge_Freezer16_2 = mean(Appliance2),
+            Eheater16_1 = mean(Appliance3),
+            Eheater16_2 = mean(Appliance4),
+            Washing_Machine16 = mean(Appliance5),
+            Dishwasher16 = mean(Appliance6),
+            PC16 = mean(Appliance7),
+            TV16= mean(Appliance8),
+            Dehumidifier16 = mean(Appliance9)) 
+
+# hourly consumption =  sum(60*minute average)/3600000
+df16_hourly <- df16_minute%>% 
+  mutate(minute = ymd_hm(minute),
+         hour = hour(minute),
+         date = as.Date(minute),
+         hourly = str_c(date, hour, sep = "-")) %>% ## get Y-M-D-H format for summarizing
+  group_by(hourly) %>% 
+  summarise(Aggregate16 = sum (Aggregate16)*60/3600000,
+            Fridge_Freezer16_1  = sum(Fridge_Freezer16_1)*60/3600000,
+            Fridge_Freezer16_2 = sum(Fridge_Freezer16_2)*60/3600000,
+            Eheater16_1 = sum(Eheater16_1)*60/3600000,
+            Eheater16_2 = sum(Eheater16_2)*60/3600000,
+            Washing_Machine16 = sum(Washing_Machine16)*60/3600000,
+            Dishwasher16  =  sum(Dishwasher16)*60/3600000,
+            PC16 = sum(PC16)*60/3600000,
+            TV16 = sum(TV16)*60/3600000,
+            Dehumidifier16 = sum(Dehumidifier16)*60/3600000)
+
+
+
+### Daily consumption = sum(minute consumption)
+df16_daily <-  df16_hourly %>% 
+  mutate(Time = ymd_h(hourly),
+         date = as.Date(Time)) %>% 
+  group_by(date) %>% 
+  summarise(Aggregate16 = sum (Aggregate16),
+            Fridge_Freezer16_1  = sum(Fridge_Freezer16_1),
+            Fridge_Freezer16_2 = sum(Fridge_Freezer16_2),
+            Eheater16_1 = sum(Eheater16_1),
+            Eheater16_2 = sum(Eheater16_2),
+            Washing_Machine16 = sum(Washing_Machine16),
+            Dishwasher16  =  sum(Dishwasher16),
+            PC16 = sum(PC16),
+            TV16 = sum(TV16),
+            Dehumidifier16 = sum(Dehumidifier16))
+
+
+# write file
+write.csv(df16_minute,"House16_minute_mean_power.csv")
+write.csv(df16_hourly,"House16_hourly_consumption.csv")
+write.csv(df16_daily,"House16_daily_consumption.csv")
+```
+
+### House 17
+```{r}
+# minute average
+df17_minute <- read_csv('data/CLEAN_House17.csv') %>% 
+  select(-c(Unix,Issues)) %>% 
+  mutate(Time = ymd_hms(Time),
+         date = as.Date(Time),
+         hour = hour(Time),
+         min = minute(Time),
+         minute = str_c(date, hour, min, sep = "-"))%>% # Y-M-D-H-M to get minute average
+  group_by(minute) %>% 
+  summarise(Aggregate17 = mean(Aggregate), ### mean power of every mins
+            Freezer17 = mean(Appliance1),
+            Fridge_Freezer17 = mean(Appliance2),
+            Tumble_Dryer17 = mean(Appliance3),
+            Washing_Machine17 = mean(Appliance4),
+            PC17 = mean(Appliance5),
+            TV17 = mean(Appliance6),
+            Microwave17 = mean(Appliance7),
+            Kettle17= mean(Appliance8),
+            TV17_2 = mean(Appliance9)) 
+
+# hourly consumption =  sum(60*minute average)/3600000
+df17_hourly <- df17_minute%>% 
+  mutate(minute = ymd_hm(minute),
+         hour = hour(minute),
+         date = as.Date(minute),
+         hourly = str_c(date, hour, sep = "-")) %>% ## get Y-M-D-H format for summarizing
+  group_by(hourly) %>% 
+  summarise(Aggregate17 = sum (Aggregate17)*60/3600000,
+            Freezer17  = sum(Freezer17)*60/3600000,
+            Fridge_Freezer17 = sum(Fridge_Freezer17)*60/3600000,
+            Tumble_Dryer17 = sum(Tumble_Dryer17)*60/3600000,
+            Washing_Machine17 = sum(Washing_Machine17)*60/3600000,
+            PC17 = sum(PC17)*60/3600000,
+            TV17  =  sum(TV17)*60/3600000,
+            Microwave17 = sum(Microwave17)*60/3600000,
+            Kettle17 = sum(Kettle17)*60/3600000,
+            TV17_2 = sum(TV17_2)*60/3600000)
+
+
+
+### Daily consumption = sum(minute consumption)
+df17_daily <-  df17_hourly %>% 
+  mutate(Time = ymd_h(hourly),
+         date = as.Date(Time)) %>% 
+  group_by(date) %>% 
+  summarise(Aggregate17 = sum (Aggregate17),
+            Freezer17  = sum(Freezer17),
+            Fridge_Freezer17 = sum(Fridge_Freezer17),
+            Tumble_Dryer17 = sum(Tumble_Dryer17),
+            Washing_Machine17 = sum(Washing_Machine17),
+            PC17 = sum(PC17),
+            TV17  =  sum(TV17),
+            Microwave17 = sum(Microwave17),
+            Kettle17 = sum(Kettle17),
+            TV17_2 = sum(TV17_2))
+
+
+# write file
+write.csv(df17_minute,"House17_minute_mean_power.csv")
+write.csv(df17_hourly,"House17_hourly_consumption.csv")
+write.csv(df17_daily,"House17_daily_consumption.csv")
+```
+
+### House18
+```{r}
+# minute average
+df18_minute <- read_csv('data/CLEAN_House18.csv') %>% 
+  select(-c(Unix,Issues)) %>% 
+  mutate(Time = ymd_hms(Time),
+         date = as.Date(Time),
+         hour = hour(Time),
+         min = minute(Time),
+         minute = str_c(date, hour, min, sep = "-"))%>% # Y-M-D-H-M to get minute average
+  group_by(minute) %>% 
+  summarise(Aggregate18 = mean(Aggregate), ### mean power of every mins
+            Fridge18 = mean(Appliance1),
+            Freezer18 = mean(Appliance2),
+            Fridge_Freezer18 = mean(Appliance3),
+            Washer_Dryer18 = mean(Appliance4),
+            Washing_Machine18 = mean(Appliance5),
+            Dishwasher18 = mean(Appliance6),
+            PC18 = mean(Appliance7),
+            TV18= mean(Appliance8),
+            Microwave18 = mean(Appliance9)) 
+
+# hourly consumption =  sum(60*minute average)/3600000
+df18_hourly <- df18_minute%>% 
+  mutate(minute = ymd_hm(minute),
+         hour = hour(minute),
+         date = as.Date(minute),
+         hourly = str_c(date, hour, sep = "-")) %>% ## get Y-M-D-H format for summarizing
+  group_by(hourly) %>% 
+  summarise(Aggregate18 = sum (Aggregate18)*60/3600000,
+            Fridge18  = sum(Fridge18)*60/3600000,
+            Freezer18 = sum(Freezer18)*60/3600000,
+            Fridge_Freezer18 = sum(Fridge_Freezer18)*60/3600000,
+            Washer_Dryer18 = sum(Washer_Dryer18)*60/3600000,
+            Washing_Machine18 = sum(Washing_Machine18)*60/3600000,
+            Dishwasher18  =  sum(Dishwasher18)*60/3600000,
+            PC18 = sum(PC18)*60/3600000,
+            TV18 = sum(TV18)*60/3600000,
+            Microwave18 = sum(Microwave18)*60/3600000)
+
+
+
+### Daily consumption = sum(minute consumption)
+df18_daily <-  df18_hourly %>% 
+  mutate(Time = ymd_h(hourly),
+         date = as.Date(Time)) %>% 
+  group_by(date) %>% 
+  summarise(Aggregate18 = sum (Aggregate12),
+            Fridge18  = sum(Fridge_Freezer12),
+            Freezer18 = sum(Freezer18),
+            Fridge_Freezer18 = sum(Fridge_Freezer18),
+            Washer_Dryer18 = sum(Washer_Dryer18),
+            Washing_Machine18 = sum(Washing_Machine18),
+            Dishwasher18  =  sum(Dishwasher18),
+            PC18 = sum(PC18),
+            TV18 = sum(TV18),
+            Microwave18 = sum(Microwave18))
+
+# write file
+write.csv(df18_minute,"House18_minute_mean_power.csv")
+write.csv(df18_hourly,"House18_hourly_consumption.csv")
+write.csv(df18_daily,"House18_daily_consumption.csv")
+```
+
+### House 19
+```{r}
+# minute average
+df19_minute <- read_csv('data/CLEAN_House19.csv') %>% 
+  select(-c(Unix,Issues)) %>% 
+  mutate(Time = ymd_hms(Time),
+         date = as.Date(Time),
+         hour = hour(Time),
+         min = minute(Time),
+         minute = str_c(date, hour, min, sep = "-"))%>% # Y-M-D-H-M to get minute average
+  group_by(minute) %>% 
+  summarise(Aggregate19 = mean(Aggregate), ### mean power of every mins
+            Fridge_Freezer19 = mean(Appliance1),
+            Washing_Machine19 = mean(Appliance2),
+            TV19 = mean(Appliance3),
+            Microwave19 = mean(Appliance4),
+            Kettle19 = mean(Appliance5),
+            Toaster19 = mean(Appliance6),
+            Breadmaker19 = mean(Appliance7),
+            Games_Console19= mean(Appliance8),
+            HiFi19 = mean(Appliance9)) 
+
+# hourly consumption =  sum(60*minute average)/3600000
+df19_hourly <- df19_minute%>% 
+  mutate(minute = ymd_hm(minute),
+         hour = hour(minute),
+         date = as.Date(minute),
+         hourly = str_c(date, hour, sep = "-")) %>% ## get Y-M-D-H format for summarizing
+  group_by(hourly) %>% 
+  summarise(Aggregate19 = sum (Aggregate19)*60/3600000,
+            Fridge_Freezer19  = sum(Fridge_Freezer19)*60/3600000,
+            Washing_Machine19 = sum(Washing_Machine19)*60/3600000,
+            TV19 = sum(TV19)*60/3600000,
+            Microwave19 = sum(Microwave19)*60/3600000,
+            Kettle19 = sum(Kettle19)*60/3600000,
+            Toaster19  =  sum(Toaster19)*60/3600000,
+            Breadmaker19 = sum(Breadmaker19)*60/3600000,
+            Games_Console19 = sum(Games_Console19)*60/3600000,
+            HiFi19 = sum(HiFi19)*60/3600000)
+
+
+
+### Daily consumption = sum(minute consumption)
+df19_daily <-  df19_hourly %>% 
+  mutate(Time = ymd_h(hourly),
+         date = as.Date(Time)) %>% 
+  group_by(date) %>% 
+  summarise(Aggregate19 = sum (Aggregate19),
+            Fridge_Freezer19  = sum(Fridge_Freezer19),
+            Washing_Machine19 = sum(Washing_Machine19),
+            TV19 = sum(TV19),
+            Microwave19 = sum(Microwave19),
+            Kettle19 = sum(Kettle19),
+            Toaster19  =  sum(Toaster19),
+            Breadmaker19 = sum(Breadmaker19),
+            Games_Console19 = sum(Games_Console19),
+            HiFi19 = sum(HiFi19))
+# write file
+write.csv(df19_minute,"House19_minute_mean_power.csv")
+write.csv(df19_hourly,"House19_hourly_consumption.csv")
+write.csv(df19_daily,"House19_daily_consumption.csv")
+```
+
+### House 20
+```{r}
+# minute average
+df20_minute <- read_csv('data/CLEAN_House20.csv') %>% 
+  select(-c(Unix,Issues)) %>% 
+  mutate(Time = ymd_hms(Time),
+         date = as.Date(Time),
+         hour = hour(Time),
+         min = minute(Time),
+         minute = str_c(date, hour, min, sep = "-"))%>% # Y-M-D-H-M to get minute average
+  group_by(minute) %>% 
+  summarise(Aggregate20 = mean(Aggregate), ### mean power of every mins
+            Fridge20 = mean(Appliance1),
+            Freezer20 = mean(Appliance2),
+            Tumble_Dryer20 = mean(Appliance3),
+            Washing_Machine20 = mean(Appliance4),
+            Dishwasher20 = mean(Appliance5),
+            PC20 = mean(Appliance6),
+            TV20 = mean(Appliance7),
+            Microwave20= mean(Appliance8),
+            Kettle20 = mean(Appliance9)) 
+
+
+# hourly consumption =  sum(60*minute average)/3600000
+df20_hourly <- df20_minute%>% 
+  mutate(minute = ymd_hm(minute),
+         hour = hour(minute),
+         date = as.Date(minute),
+         hourly = str_c(date, hour, sep = "-")) %>% ## get Y-M-D-H format for summarizing
+  group_by(hourly) %>% 
+  summarise(Aggregate20 = sum (Aggregate20)*60/3600000,
+            Fridge20  = sum(Fridge20)*60/3600000,
+            Freezer20 = sum(Freezer20)*60/3600000,
+            Tumble_Dryer20 = sum(Tumble_Dryer20)*60/3600000,
+            Washing_Machine20 = sum(Washing_Machine20)*60/3600000,
+            Dishwasher20 = sum(Dishwasher20)*60/3600000,
+            PC20  =  sum(PC20)*60/3600000,
+            TV20 = sum(TV20)*60/3600000,
+            Microwave20 = sum(Microwave20)*60/3600000,
+            Kettle20 = sum(Kettle20)*60/3600000)
+
+
+
+### Daily consumption = sum(minute consumption)
+df20_daily <-  df20_hourly %>% 
+  mutate(Time = ymd_h(hourly),
+         date = as.Date(Time)) %>% 
+  group_by(date) %>% 
+  summarise(Aggregate20 = sum (Aggregate20),
+            Fridge20  = sum(Fridge20),
+            Freezer20 = sum(Freezer20),
+            Tumble_Dryer20 = sum(Tumble_Dryer20),
+            Washing_Machine20 = sum(Washing_Machine20),
+            Dishwasher20 = sum(Dishwasher20),
+            PC20  =  sum(PC20),
+            TV20 = sum(TV20),
+            Microwave20 = sum(Microwave20),
+            Kettle20 = sum(Kettle20))
+# write file
+write.csv(df20_minute,"House20_minute_mean_power.csv")
+write.csv(df20_hourly,"House20_hourly_consumption.csv")
+write.csv(df20_daily,"House20_daily_consumption.csv")
+```
+
+### House 21
+```{r}
+# minute average
+df21_minute <- read_csv('data/CLEAN_House21.csv') %>% 
+  select(-c(Unix,Issues)) %>% 
+  mutate(Time = ymd_hms(Time),
+         date = as.Date(Time),
+         hour = hour(Time),
+         min = minute(Time),
+         minute = str_c(date, hour, min, sep = "-"))%>% # Y-M-D-H-M to get minute average
+  group_by(minute) %>% 
+  summarise(Aggregate21 = mean(Aggregate), ### mean power of every mins
+            Fridge_Freezer21 = mean(Appliance1),
+            Tumble_Dryer21 = mean(Tumble_Dryer21),
+            Washing_Machine21 = mean(Appliance3),
+            Dishwasher21 = mean(Appliance4),
+            FoodMixer21 = mean(Appliance5),
+            TV21 = mean(Appliance6),
+            Kettle21 = mean(Appliance7),
+            Vivarium21= mean(Appliance8),
+            PondPump21 = mean(Appliance9)) 
+
+
+# hourly consumption =  sum(60*minute average)/3600000
+df21_hourly <- df21_minute%>% 
+  mutate(minute = ymd_hm(minute),
+         hour = hour(minute),
+         date = as.Date(minute),
+         hourly = str_c(date, hour, sep = "-")) %>% ## get Y-M-D-H format for summarizing
+  group_by(hourly) %>% 
+  summarise(Aggregate21 = sum (Aggregate21)*60/3600000,
+            Fridge_Freezer21  = sum(Fridge_Freezer21)*60/3600000,
+            Tumble_Dryer21 = sum(Tumble_Dryer21)*60/3600000,
+            Washing_Machine21 = sum(Washing_Machine21)*60/3600000,
+            Dishwasher21 = sum(Dishwasher21)*60/3600000,
+            FoodMixer21 = sum(FoodMixer21)*60/3600000,
+            TV21  =  sum(TV21)*60/3600000,
+            Kettle21 = sum(Kettle21)*60/3600000,
+            Vivarium21 = sum(Vivarium21)*60/3600000,
+            PondPump21 = sum(PondPump21)*60/3600000)
+
+
+
+### Daily consumption = sum(minute consumption)
+df21_daily <-  df21_hourly %>% 
+  mutate(Time = ymd_h(hourly),
+         date = as.Date(Time)) %>% 
+  group_by(date) %>% 
+  summarise(Aggregate21 = sum (Aggregate21),
+            Fridge_Freezer21  = sum(Fridge_Freezer21),
+            Tumble_Dryer21 = sum(Tumble_Dryer21),
+            Washing_Machine21 = sum(Washing_Machine21),
+            Dishwasher21 = sum(Dishwasher21),
+            FoodMixer21 = sum(FoodMixer21),
+            TV21  =  sum(TV21),
+            Kettle21 = sum(Kettle21),
+            Vivarium21 = sum(Vivarium21),
+            PondPump21 = sum(PondPump21))
+# write file
+write.csv(df21_minute,"House21_minute_mean_power.csv")
+write.csv(df21_hourly,"House21_hourly_consumption.csv")
+write.csv(df21_daily,"House21_daily_consumption.csv")
